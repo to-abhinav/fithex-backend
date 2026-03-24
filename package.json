@@ -1,0 +1,20 @@
+{
+  "name": "fithex-backend",
+  "version": "1.0.0",
+  "description": "Thsi is backend for fithex created by abhinav ",
+  "homepage": "https://github.com/to-abhinav/fithex-backend#readme",
+  "bugs": {
+    "url": "https://github.com/to-abhinav/fithex-backend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/to-abhinav/fithex-backend.git"
+  },
+  "license": "ISC",
+  "author": "Abhinav Tomar",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
