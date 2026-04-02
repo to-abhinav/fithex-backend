@@ -9,13 +9,12 @@ const memberSchema = new mongoose.Schema(
     },
     gymId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Gym",
       required: true,
     },
     subscriptionPlan: {
-      type: String,
-      enum: ["strength", "cardio"],
-      required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Plan"
     },
     subscriptionMonths: {
       type: Number,
