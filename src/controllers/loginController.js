@@ -4,8 +4,8 @@ const bcypt = require("bcryptjs");
 
 
 
-const generateToken = (id)=>{
-    return jwt.sign({id},process.env.JWT_SECRET,{ expiresIn:process.env.JWT_EXPIRES_IN });
+const generateToken = (id,role)=>{
+    return jwt.sign({id,role},process.env.JWT_SECRET,{ expiresIn:process.env.JWT_EXPIRES_IN });
 }
 
 const loginUser = async (req,res) =>{
@@ -25,7 +25,7 @@ const loginUser = async (req,res) =>{
         }
 
         res.json({
-            token:generateToken(user._id),
+            token:generateToken(user._id, user.role),
             user
         })
     } catch (error) {
