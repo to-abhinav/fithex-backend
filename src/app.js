@@ -4,6 +4,7 @@ const loginRoutes = require("./routes/loginRoute")
 const gymRoutes = require("./routes/gymRoutes");
 const memberRoutes = require("./routes/memberRoute");
 const planRoutes = require("./routes/planRoutes");
+const requestRoutes = require("./routes/requestRoutes");
 const cors = require("cors");
 
 const app = express();
@@ -19,5 +20,6 @@ app.use("/auth",loginRoutes)
 app.use("/gyms", gymRoutes);
 app.use("/members", memberRoutes);
 app.use("/plans",planRoutes);
+app.use("/requests", requestRoutes);
 
 module.exports = app;
