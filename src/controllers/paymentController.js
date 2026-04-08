@@ -69,7 +69,7 @@ const createOrder = async (req, res) => {
       amount:    order.amount,
       currency:  order.currency,
       paymentId: payment._id,
-      // Share the public key with the frontend, but keep the secret safe on the server
+
       keyId:     process.env.RAZORPAY_KEY_ID,
     });
   } catch (error) {
