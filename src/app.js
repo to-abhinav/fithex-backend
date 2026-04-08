@@ -6,6 +6,8 @@ const memberRoutes = require("./routes/memberRoute");
 const planRoutes = require("./routes/planRoutes");
 const requestRoutes = require("./routes/requestRoutes");
 const cors = require("cors");
+const weightRoutes = require("./routes/weightRoutes");
+const { startAutoCheckoutCron } = require("../corn/autoCheckout");
 
 const app = express();
 app.use(cors());
@@ -21,5 +23,10 @@ app.use("/gyms", gymRoutes);
 app.use("/members", memberRoutes);
 app.use("/plans",planRoutes);
 app.use("/requests", requestRoutes);
+app.use("/weight", weightRoutes);
+
+
+startAutoCheckoutCron();
+
 
 module.exports = app;
