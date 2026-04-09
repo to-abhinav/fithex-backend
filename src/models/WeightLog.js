@@ -37,7 +37,7 @@ const weightLogSchema = new mongoose.Schema(
 );
 
 
-weightLogSchema.pre("save", async function (next) {
+weightLogSchema.pre("save", async function () {
   if (this.isModified("weight")) {
     const User = mongoose.model("User");
     const user = await User.findById(this.userId).select("heightCm");
@@ -46,7 +46,6 @@ weightLogSchema.pre("save", async function (next) {
       this.bmi = parseFloat((this.weight / (heightM * heightM)).toFixed(1));
     }
   }
-  next();
 });
 
 weightLogSchema.index({ userId: 1, date: -1 });

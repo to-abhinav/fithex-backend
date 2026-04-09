@@ -1,5 +1,5 @@
 const GymSession = require("../models/GymSession");
-const Member = require("../models/Member");
+const Member = require("../models/Members");
 const Gym = require("../models/Gym");
 
 

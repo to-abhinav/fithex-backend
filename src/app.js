@@ -8,8 +8,10 @@ const requestRoutes = require("./routes/requestRoutes");
 const cors = require("cors");
 const weightRoutes = require("./routes/weightRoutes");
 const { startAutoCheckoutCron } = require("../corn/autoCheckout");
+const entryRoutes = require("./routes/entryRoute");
 
 const app = express();
+app.use("/api/payment/webhook", express.raw({ type: "application/json" }));
 app.use(cors());
 app.use(express.json());
 
@@ -24,6 +26,7 @@ app.use("/members", memberRoutes);
 app.use("/plans",planRoutes);
 app.use("/requests", requestRoutes);
 app.use("/weight", weightRoutes);
+app.use("/entry",entryRoutes)
 
 
 startAutoCheckoutCron();

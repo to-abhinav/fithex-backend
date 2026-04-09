@@ -7,7 +7,10 @@ yarn-error.log
 dist/
 .cache/
 coverage/
+api_flow_logs.json
 
+test/
+tests/
 # JavaScript
 # Add JavaScript-specific ignores here
 

@@ -1,41 +1,29 @@
 const cron = require("node-cron");
-const GymSession = require("../models/GymSession");
+const GymSession = require("../src/models/GymSession");
 
-const AUTO_CHECKOUT_HOURS = 2;
+const AUTO_CHECKOUT_SECONDS = process.env.AUTO_CHECKOUT_SECONDS || 2 * 60 * 60;
 
 const runAutoCheckout = async () => {
   const cutoff = new Date(
-    Date.now() - AUTO_CHECKOUT_HOURS * 60 * 60 * 1000
+    Date.now() - AUTO_CHECKOUT_SECONDS * 1000
   );
 
-  const result = await GymSession.updateMany(
-    {
-      checkOutTime: null,
-      checkInTime: { $lt: cutoff },
-    },
-    [
-      {
-        $set: {
-          checkOutTime: new Date(),
-          autoCheckedOut: true,
-          durationMinutes: {
-            $round: [
-              {
-                $divide: [
-                  { $subtract: [new Date(), "$checkInTime"] },
-                  60000,
-                ],
-              },
-              0,
-            ],
-          },
-        },
-      },
-    ]
-  );
+  const sessions = await GymSession.find({
+    checkOutTime: null,
+    checkInTime: { $lt: cutoff },
+  });
 
-  if (result.modifiedCount > 0) {
-    console.log(`[AutoCheckout] Closed ${result.modifiedCount} stale session(s)`);
+  let modifiedCount = 0;
+  for (const session of sessions) {
+    session.checkOutTime = new Date();
+    session.autoCheckedOut = true;
+    session.durationMinutes = Math.floor((session.checkOutTime - session.checkInTime) / 60000);
+    await session.save();
+    modifiedCount++;
+  }
+
+  if (modifiedCount > 0) {
+    console.log(`[AutoCheckout] Closed ${modifiedCount} stale session(s)`);
   }
 };
 
@@ -52,4 +40,4 @@ const startAutoCheckoutCron = () => {
   console.log("[AutoCheckout] Cron job started (every 30 min)");
 };
 
-module.exports = { startAutoCheckoutCron };
+module.exports = { startAutoCheckoutCron, runAutoCheckout };
