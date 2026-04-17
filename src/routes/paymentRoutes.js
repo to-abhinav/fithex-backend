@@ -9,14 +9,18 @@ const {
   getMyPayments,
   getGymPayments,
 } = require("../controllers/paymentController");
+const {
+  validateCreateOrder,
+  validateVerifyPayment,
+} = require("../validators/paymentValidator");
 
 router.post("/webhook", handleWebhook);
 
-router.post("/create-order", authMiddleware, isMember, createOrder);
-router.post("/verify",       authMiddleware, isMember, verifyPayment);
-router.get("/mine",          authMiddleware, isMember, getMyPayments);
+router.post("/create-order", authMiddleware, isMember, validateCreateOrder,   createOrder);
+router.post("/verify",       authMiddleware, isMember, validateVerifyPayment, verifyPayment);
+router.get("/mine",          authMiddleware, isMember,                        getMyPayments);
 
 // Owner route
-router.get("/gym",           authMiddleware, isOwner,  getGymPayments);
+router.get("/gym",           authMiddleware, isOwner,                         getGymPayments);
 
-module.exports = router;
+module.exports = router;

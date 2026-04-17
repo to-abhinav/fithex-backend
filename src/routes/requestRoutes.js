@@ -11,12 +11,17 @@ const {
   rejectRequest,
   cancelRequest
 } = require("../controllers/requestController");
+const {
+  validateApplyToGym,
+  validateRejectRequest,
+  validateRequestId,
+} = require("../validators/requestValidator");
 
-router.post("/",                   authMiddleware, isMember, applyToGym);
-router.get("/mine",                authMiddleware, isMember, getMyRequests);
-router.get("/gym",                 authMiddleware, isOwner,  getGymRequests);
-router.put("/:id/approve",         authMiddleware, isOwner,  approveRequest);
-router.put("/:id/reject",          authMiddleware, isOwner,  rejectRequest);
-router.put("/:id/cancel",          authMiddleware, isMember, cancelRequest);
+router.post("/",                   authMiddleware, isMember, validateApplyToGym,    applyToGym);
+router.get("/mine",                authMiddleware, isMember,                        getMyRequests);
+router.get("/gym",                 authMiddleware, isOwner,                         getGymRequests);
+router.put("/:id/approve",         authMiddleware, isOwner,  validateRequestId,     approveRequest);
+router.put("/:id/reject",          authMiddleware, isOwner,  validateRejectRequest, rejectRequest);
+router.put("/:id/cancel",          authMiddleware, isMember, validateRequestId,     cancelRequest);
 
-module.exports = router;
+module.exports = router;

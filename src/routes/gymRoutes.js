@@ -8,19 +8,28 @@ const {
   updateGymImages, updateTimings,
   toggleGymStatus, deleteGym
 } = require("../controllers/gymController");
+const {
+  validateCreateGym,
+  validateUpdateGym,
+  validateUpdateGymImages,
+  validateUpdateTimings,
+  validateNearbyGyms,
+  validateSearchGyms,
+  validateGymId,
+} = require("../validators/gymValidator");
 
 // public routes — no auth needed
-router.get("/nearby",      getNearbyGyms);
-router.get("/search",      searchGyms);
-router.get("/:id",         getGymById);
+router.get("/nearby",      validateNearbyGyms, getNearbyGyms);
+router.get("/search",      validateSearchGyms, searchGyms);
+router.get("/:id",         validateGymId,      getGymById);
 
 // owner only routes
-router.post("/",                       authMiddleware, isOwner, createGym);
-router.get("/owner/mine",              authMiddleware, isOwner, getMyGym);
-router.put("/:id",                     authMiddleware, isOwner, updateGym);
-router.put("/:id/images",              authMiddleware, isOwner, updateGymImages);
-router.put("/:id/timings",             authMiddleware, isOwner, updateTimings);
-router.put("/:id/toggle-status",       authMiddleware, isOwner, toggleGymStatus);
-router.delete("/:id",                  authMiddleware, isOwner, deleteGym);
+router.post("/",                       authMiddleware, isOwner, validateCreateGym,      createGym);
+router.get("/owner/mine",              authMiddleware, isOwner,                         getMyGym);
+router.put("/:id",                     authMiddleware, isOwner, validateUpdateGym,       updateGym);
+router.put("/:id/images",              authMiddleware, isOwner, validateUpdateGymImages, updateGymImages);
+router.put("/:id/timings",             authMiddleware, isOwner, validateUpdateTimings,   updateTimings);
+router.put("/:id/toggle-status",       authMiddleware, isOwner, validateGymId,           toggleGymStatus);
+router.delete("/:id",                  authMiddleware, isOwner, validateGymId,           deleteGym);
 
-module.exports = router;
+module.exports = router;

@@ -1,13 +1,14 @@
 const express = require("express");
 const User = require("../models/User");
 
-const {loginUser} = require("../controllers/loginController");
+const { loginUser } = require("../controllers/loginController");
 
-const authMiddleware =require("../middleware/authMiddleware")
+const authMiddleware = require("../middleware/authMiddleware");
+const { validateLogin } = require("../validators/userValidator");
 const router = express.Router();
 
 
-router.post("/login", loginUser);
+router.post("/login", validateLogin, loginUser);
 
 router.get("/profile", authMiddleware, async (req, res) => {
    try {

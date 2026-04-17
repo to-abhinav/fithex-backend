@@ -11,15 +11,20 @@ const {
   updateWeightEntry,
   deleteWeightEntry,
 } = require("../controllers/weightController");
+const {
+  validateLogWeight,
+  validateUpdateWeight,
+  validateWeightId,
+} = require("../validators/weightValidator");
 
 router.use(authMiddleware, isMember);
 
-router.post("/",              logWeight);
-router.get("/mine",           getMyWeightHistory);
-router.get("/latest",         getLatestWeight);
-router.get("/stats",          getWeightStats);       
-router.get("/weekly-avg",     getWeeklyAverage);     
-router.put("/:id",            updateWeightEntry);
-router.delete("/:id",         deleteWeightEntry);
+router.post("/",              validateLogWeight,    logWeight);
+router.get("/mine",                                 getMyWeightHistory);
+router.get("/latest",                               getLatestWeight);
+router.get("/stats",                                getWeightStats);
+router.get("/weekly-avg",                           getWeeklyAverage);
+router.put("/:id",            validateUpdateWeight, updateWeightEntry);
+router.delete("/:id",         validateWeightId,     deleteWeightEntry);
 
-module.exports = router;
+module.exports = router;
