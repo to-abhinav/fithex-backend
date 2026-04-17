@@ -1,8 +1,11 @@
 const express = require("express");
 const router = express.Router();
 
-const { registerUser } = require("../controllers/userController");
-const { validateRegister } = require("../validators/userValidator");
+const { sendOtp, registerUser } = require("../controllers/userController");
+const { validateSendOtp, validateRegister } = require("../validators/userValidator");
+
+
+router.post("/send-otp", validateSendOtp, sendOtp);
 
 router.post("/register", validateRegister, registerUser);
 

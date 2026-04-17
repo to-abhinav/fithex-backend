@@ -18,12 +18,10 @@ const {
   validateGymId,
 } = require("../validators/gymValidator");
 
-// public routes — no auth needed
 router.get("/nearby",      validateNearbyGyms, getNearbyGyms);
 router.get("/search",      validateSearchGyms, searchGyms);
 router.get("/:id",         validateGymId,      getGymById);
 
-// owner only routes
 router.post("/",                       authMiddleware, isOwner, validateCreateGym,      createGym);
 router.get("/owner/mine",              authMiddleware, isOwner,                         getMyGym);
 router.put("/:id",                     authMiddleware, isOwner, validateUpdateGym,       updateGym);
@@ -32,4 +30,4 @@ router.put("/:id/timings",             authMiddleware, isOwner, validateUpdateTi
 router.put("/:id/toggle-status",       authMiddleware, isOwner, validateGymId,           toggleGymStatus);
 router.delete("/:id",                  authMiddleware, isOwner, validateGymId,           deleteGym);
 
-module.exports = router;
+module.exports = router;

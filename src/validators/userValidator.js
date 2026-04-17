@@ -1,6 +1,18 @@
 const { body } = require("express-validator");
 const validate = require("./validate");
 
+
+const validateSendOtp = [
+  body("email")
+    .trim()
+    .notEmpty().withMessage("Email is required.")
+    .isEmail().withMessage("Please provide a valid email address.")
+    .normalizeEmail(),
+
+  validate,
+];
+
+
 const validateRegister = [
   body("name")
     .trim()
@@ -22,6 +34,12 @@ const validateRegister = [
     .optional()
     .isIn(["member", "owner"]).withMessage("Role must be either 'member' or 'owner'."),
 
+  body("otp")
+    .trim()
+    .notEmpty().withMessage("OTP is required.")
+    .isLength({ min: 6, max: 6 }).withMessage("OTP must be exactly 6 digits.")
+    .isNumeric().withMessage("OTP must contain only digits."),
+
   validate,
 ];
 
@@ -38,4 +56,4 @@ const validateLogin = [
   validate,
 ];
 
-module.exports = { validateRegister, validateLogin };
+module.exports = { validateSendOtp, validateRegister, validateLogin };
