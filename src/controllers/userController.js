@@ -1,7 +1,11 @@
 const User = require("../models/User");
 const Otp = require("../models/Otp");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const { generateOtp, sendOtpEmail } = require("../services/otpService");
+
+const generateToken = (id, role) =>
+  jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
 
 
 const sendOtp = async (req, res) => {
@@ -55,13 +59,17 @@ const registerUser = async (req, res) => {
       role,
     });
 
+    const token = generateToken(user._id, user.role);
+
     res.status(201).json({
       message: "User registered successfully.",
+      token,
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        profileComplete: user.profileComplete,
         createdAt: user.createdAt,
       },
     });
@@ -71,7 +79,94 @@ const registerUser = async (req, res) => {
   }
 };
 
+
+/** GET /users/profile  (protected) */
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found." });
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("getProfile error:", error.message);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+
+/**
+ * PUT /users/profile  (protected)
+ * Accepts any subset of the fitness profile fields and saves them.
+ * Sets profileComplete = true once all required fields are present.
+ */
+const updateProfile = async (req, res) => {
+  try {
+    const ALLOWED_FIELDS = [
+      "name",
+      "age",
+      "gender",
+      "heightCm",
+      "weight",
+      "goalWeight",
+      "fitnessGoal",
+      "activityLevel",
+    ];
+
+    // Build update object from only allowed fields
+    const updates = {};
+    for (const field of ALLOWED_FIELDS) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: "No valid fields provided." });
+    }
+
+    // Merge, then decide if profile is complete
+    const user = await User.findById(req.user);
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    Object.assign(user, updates);
+
+    // Mark profile complete when all required fitness fields are filled
+    const REQUIRED_PROFILE_FIELDS = [
+      "age", "gender", "heightCm", "weight", "fitnessGoal", "activityLevel",
+    ];
+    const allFilled = REQUIRED_PROFILE_FIELDS.every(
+      (f) => user[f] !== null && user[f] !== undefined
+    );
+    if (allFilled) user.profileComplete = true;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully.",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        age: user.age,
+        gender: user.gender,
+        heightCm: user.heightCm,
+        weight: user.weight,
+        goalWeight: user.goalWeight,
+        fitnessGoal: user.fitnessGoal,
+        activityLevel: user.activityLevel,
+        profileComplete: user.profileComplete,
+      },
+    });
+  } catch (error) {
+    console.error("updateProfile error:", error.message);
+    res.status(500).json({ message: "Failed to update profile." });
+  }
+};
+
+
 module.exports = {
   sendOtp,
   registerUser,
+  getProfile,
+  updateProfile,
 };
