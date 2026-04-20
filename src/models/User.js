@@ -24,7 +24,11 @@ const userSchema = new mongoose.Schema(
       default: "member",
     },
 
-    // ── Fitness Profile ──────────────────────────────────────────────────
+    profileImage: { type: String, default: null },
+    profileImagePublicId: { type: String, default: null },
+
+    bannerImage: { type: String, default: null },
+    bannerImagePublicId: { type: String, default: null },
     age: {
       type: Number,
       min: 10,
@@ -37,19 +41,18 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
     heightCm: {
-      type: Number,          // e.g. 175 cm  (used by WeightLog for BMI)
-      min: 50,
+      type: Number, 
       max: 250,
       default: null,
     },
     weight: {
-      type: Number,          // current weight in kg (starting weight)
+      type: Number, 
       min: 20,
       max: 500,
       default: null,
     },
     goalWeight: {
-      type: Number,          // target weight in kg
+      type: Number, 
       min: 20,
       max: 500,
       default: null,
@@ -69,11 +72,11 @@ const userSchema = new mongoose.Schema(
     activityLevel: {
       type: String,
       enum: [
-        "sedentary",        
-        "lightly_active",   
+        "sedentary",
+        "lightly_active",
         "moderately_active",
-        "very_active",      
-        "extra_active",     
+        "very_active",
+        "extra_active",
         null,
       ],
       default: null,
@@ -84,7 +87,7 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const User = mongoose.model("User", userSchema);
