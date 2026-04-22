@@ -1,4 +1,3 @@
-// src/validators/weightValidator.js
 const { body, param } = require("express-validator");
 const validate = require("./validate");
 

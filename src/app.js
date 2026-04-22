@@ -2,12 +2,13 @@ const express = require("express");
 const userRoutes = require("./routes/userRoutes")
 const loginRoutes = require("./routes/loginRoute")
 const gymRoutes = require("./routes/gymRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
 const memberRoutes = require("./routes/memberRoute");
 const planRoutes = require("./routes/planRoutes");
 const requestRoutes = require("./routes/requestRoutes");
 const cors = require("cors");
 const weightRoutes = require("./routes/weightRoutes");
-const { startAutoCheckoutCron } = require("../corn/autoCheckout");
+const { startAutoCheckoutCron } = require("../cron/autoCheckout");
 const entryRoutes = require("./routes/entryRoute");
 
 const app = express();
@@ -22,6 +23,7 @@ app.get("/", (req, res) => {
 app.use("/users",userRoutes)
 app.use("/auth",loginRoutes)
 app.use("/gyms", gymRoutes);
+app.use("/gyms", reviewRoutes);
 app.use("/members", memberRoutes);
 app.use("/plans",planRoutes);
 app.use("/requests", requestRoutes);

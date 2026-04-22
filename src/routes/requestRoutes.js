@@ -1,4 +1,3 @@
-// src/routes/requestRoutes.js
 const express = require("express");
 const router  = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
@@ -24,4 +23,4 @@ router.put("/:id/approve",         authMiddleware, isOwner,  validateRequestId, 
 router.put("/:id/reject",          authMiddleware, isOwner,  validateRejectRequest, rejectRequest);
 router.put("/:id/cancel",          authMiddleware, isMember, validateRequestId,     cancelRequest);
 
-module.exports = router;
+module.exports = router;

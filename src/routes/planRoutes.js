@@ -1,4 +1,3 @@
-// src/routes/planRoutes.js
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
@@ -30,4 +29,4 @@ router.put("/:id",          authMiddleware, isOwner, validateUpdatePlan, updateP
 router.put("/:id/toggle",   authMiddleware, isOwner, validatePlanId,     togglePlan);
 router.delete("/:id",       authMiddleware, isOwner, validatePlanId,     deletePlan);
 
-module.exports = router;
+module.exports = router;
