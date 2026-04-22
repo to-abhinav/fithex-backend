@@ -1,6 +1,7 @@
 const GymSession = require("../models/GymSession");
 const Member = require("../models/Members");
 const Gym = require("../models/Gym");
+const { recordActivity } = require("../services/streakService");
 
 
 const getActiveMember = async (userId) => {
@@ -36,6 +37,11 @@ const checkIn = async (req, res) => {
       userId,
       gymId: member.gymId,
     });
+
+    // Fire-and-forget — streak failure should never block check-in
+    recordActivity(userId, member.gymId).catch((err) =>
+      console.error("[Streak] Error recording activity:", err.message)
+    );
 
     res.status(201).json({
       message: "Checked in successfully",
