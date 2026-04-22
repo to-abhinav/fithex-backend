@@ -93,11 +93,6 @@ const getProfile = async (req, res) => {
 };
 
 
-/**
- * PUT /users/profile  (protected)
- * Accepts any subset of the fitness profile fields and saves them.
- * Sets profileComplete = true once all required fields are present.
- */
 const updateProfile = async (req, res) => {
   try {
     const ALLOWED_FIELDS = [
@@ -123,13 +118,13 @@ const updateProfile = async (req, res) => {
       return res.status(400).json({ message: "No valid fields provided." });
     }
 
-    // Merge, then decide if profile is complete
+   
     const user = await User.findById(req.user);
     if (!user) return res.status(404).json({ message: "User not found." });
 
     Object.assign(user, updates);
 
-    // Mark profile complete when all required fitness fields are filled
+   
     const REQUIRED_PROFILE_FIELDS = [
       "age", "gender", "heightCm", "weight", "fitnessGoal", "activityLevel",
     ];
@@ -154,6 +149,8 @@ const updateProfile = async (req, res) => {
         goalWeight: user.goalWeight,
         fitnessGoal: user.fitnessGoal,
         activityLevel: user.activityLevel,
+        profileImage: user.profileImage,
+        bannerImage: user.bannerImage,
         profileComplete: user.profileComplete,
       },
     });

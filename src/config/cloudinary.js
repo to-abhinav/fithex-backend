@@ -1,5 +1,4 @@
 const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 
 cloudinary.config({
@@ -8,42 +7,42 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// profile image
-const profileStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'fithex/profiles',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 400, height: 400, crop: 'fill' }], 
-  },
-});
+const memoryStorage = multer.memoryStorage();
 
-// banner images
-const bannerStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'fithex/banners',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 1200, height: 400, crop: 'fill' }], 
-  },
-});
+const imageFileFilter = (req, file, cb) => {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only JPEG, PNG, and WebP images are allowed.'), false);
+  }
+};
 
 const uploadProfile = multer({
-  storage: profileStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, 
-  fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    cb(null, allowed.includes(file.mimetype));
-  },
+  storage: memoryStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: imageFileFilter,
 });
 
 const uploadBanner = multer({
-  storage: bannerStorage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    cb(null, allowed.includes(file.mimetype));
-  },
+  storage: memoryStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: imageFileFilter,
 });
 
-module.exports = { cloudinary, uploadProfile, uploadBanner };
+/**
+ * Upload a buffer to Cloudinary and return { secure_url, public_id }.
+ * @param {Buffer} buffer
+ * @param {object} options  – Cloudinary upload options (folder, transformation, etc.)
+ */
+const uploadToCloudinary = (buffer, options = {}) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) return reject(error);
+      resolve(result);
+    });
+    stream.end(buffer);
+  });
+};
+
+module.exports = { cloudinary, uploadProfile, uploadBanner, uploadToCloudinary };
