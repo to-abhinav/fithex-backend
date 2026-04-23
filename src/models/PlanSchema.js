@@ -17,6 +17,20 @@ const planSchema = new mongoose.Schema({
     enum: ["Strength", "Cardio", "Yoga"],
     required: true,
   },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: 500,
+    default: "",
+  },
+  features: {
+    type: [String],
+    default: [],
+    validate: {
+      validator: (v) => v.length <= 20,
+      message: "Max 20 features allowed",
+    },
+  },
   price: {
     type: Number,
     required: true,

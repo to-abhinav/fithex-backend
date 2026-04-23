@@ -39,6 +39,19 @@ const reviewSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    ownerReply: {
+      text: {
+        type: String,
+        trim: true,
+        maxlength: 1000,
+        default: null,
+      },
+      repliedAt: {
+        type: Date,
+        default: null,
+      },
+    },
   },
   {
     timestamps: true,

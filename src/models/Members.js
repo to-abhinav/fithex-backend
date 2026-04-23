@@ -31,6 +31,20 @@ const memberSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "inactive",
     },
+    notes: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: "",
+    },
+    tags: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: (v) => v.length <= 10,
+        message: "Max 10 tags allowed",
+      },
+    },
   },
   {
     timestamps: true,
