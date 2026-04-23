@@ -48,8 +48,38 @@ const validateMemberId = [
   validate,
 ];
 
+const validateUpdateMemberNotes = [
+  param("id").isMongoId().withMessage("Invalid member ID."),
+
+  body("notes")
+    .optional()
+    .isString().withMessage("Notes must be a string.")
+    .isLength({ max: 2000 }).withMessage("Notes must not exceed 2000 characters."),
+
+  body("tags")
+    .optional()
+    .isArray({ max: 10 }).withMessage("Tags must be an array with max 10 items."),
+
+  body("tags.*")
+    .optional()
+    .isString().withMessage("Each tag must be a string.")
+    .trim()
+    .isLength({ min: 1, max: 50 }).withMessage("Each tag must be 1-50 characters."),
+
+  body().custom((value, { req }) => {
+    const { notes, tags } = req.body;
+    if (notes === undefined && tags === undefined) {
+      throw new Error("At least one of notes or tags is required.");
+    }
+    return true;
+  }),
+
+  validate,
+];
+
 module.exports = {
   validateCreateMember,
   validateRenewMembership,
   validateMemberId,
+  validateUpdateMemberNotes,
 };

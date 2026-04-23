@@ -16,6 +16,10 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const { startMembershipNotifierCron } = require("../cron/membershipNotifier");
 const { startSessionSweeperCron } = require("../cron/sessionSweeper");
 const { startVisitNudgeCron } = require("../cron/visitNudge");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const closureRoutes = require("./routes/closureRoutes");
+const announcementRoutes = require("./routes/announcementRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
 app.use("/api/payment/webhook", express.raw({ type: "application/json" }));
@@ -37,6 +41,10 @@ app.use("/weight", weightRoutes);
 app.use("/entry",entryRoutes)
 app.use("/streaks", streakRoutes);
 app.use("/notifications", notificationRoutes);
+app.use("/analytics", analyticsRoutes);
+app.use("/closures", closureRoutes);
+app.use("/announcements", announcementRoutes);
+app.use("/api/payment", paymentRoutes);
 
 
 startAutoCheckoutCron();
@@ -46,4 +54,4 @@ startSessionSweeperCron();
 startVisitNudgeCron();
 
 
-module.exports = app;
+module.exports = app;

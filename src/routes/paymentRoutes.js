@@ -8,6 +8,7 @@ const {
   handleWebhook,
   getMyPayments,
   getGymPayments,
+  getRevenueSummary,
 } = require("../controllers/paymentController");
 const {
   validateCreateOrder,
@@ -20,7 +21,7 @@ router.post("/create-order", authMiddleware, isMember, validateCreateOrder,   cr
 router.post("/verify",       authMiddleware, isMember, validateVerifyPayment, verifyPayment);
 router.get("/mine",          authMiddleware, isMember,                        getMyPayments);
 
-// Owner route
-router.get("/gym",           authMiddleware, isOwner,                         getGymPayments);
+router.get("/gym",             authMiddleware, isOwner, getGymPayments);
+router.get("/revenue-summary", authMiddleware, isOwner, getRevenueSummary);
 
-module.exports = router;
+module.exports = router;

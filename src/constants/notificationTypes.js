@@ -23,6 +23,8 @@ const NOTIFICATION_TYPES = Object.freeze({
 
   SMART_VISIT_NUDGE: "smart_visit_nudge",
 
+  ANNOUNCEMENT: "announcement",
+
 });
 
 const NOTIFICATION_TYPE_VALUES = Object.values(NOTIFICATION_TYPES);

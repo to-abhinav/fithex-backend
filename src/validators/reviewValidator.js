@@ -80,9 +80,25 @@ const validateReviewGymId = [
   validate,
 ];
 
+const validateReplyToReview = [
+  param("id")
+    .isMongoId().withMessage("Invalid gym ID."),
+
+  param("reviewId")
+    .isMongoId().withMessage("Invalid review ID."),
+
+  body("text")
+    .notEmpty().withMessage("Reply text is required.")
+    .trim()
+    .isLength({ max: 1000 }).withMessage("Reply must not exceed 1000 characters."),
+
+  validate,
+];
+
 module.exports = {
   validateCreateReview,
   validateUpdateReview,
   validateGetReviews,
   validateReviewGymId,
+  validateReplyToReview,
 };

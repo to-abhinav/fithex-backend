@@ -1,0 +1,21 @@
+--- FitHex API Test Session: 22/4/2026, 11:06:17 pm ---
+
+TEST: GET /
+Request: GET http://localhost:5000/
+Status: 200
+Response: API running...
+----------------------------------------
+TEST: POST /users/send-otp
+Request: POST http://localhost:5000/users/send-otp
+Status: 200
+Response: {
+  "message": "OTP sent successfully. Check your email."
+}
+----------------------------------------
+TEST: POST /auth/login
+Request: POST http://localhost:5000/auth/login
+Status: 400
+Response: {
+  "message": "Invalid email or password"
+}
+----------------------------------------
