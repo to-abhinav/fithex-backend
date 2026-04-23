@@ -23,7 +23,11 @@ const userSchema = new mongoose.Schema(
       enum: ["member", "owner"],
       default: "member",
     },
-
+    phone:{
+      type: Number,
+      required: true,
+      trim: true,
+    },
     profileImage: { type: String, default: null },
     profileImagePublicId: { type: String, default: null },
 
@@ -69,16 +73,10 @@ const userSchema = new mongoose.Schema(
       ],
       default: null,
     },
-    activityLevel: {
-      type: String,
-      enum: [
-        "sedentary",
-        "lightly_active",
-        "moderately_active",
-        "very_active",
-        "extra_active",
-        null,
-      ],
+    numberOfWorkoutDay: {
+      type: Number,
+      min: 0,
+      max: 7,
       default: null,
     },
 

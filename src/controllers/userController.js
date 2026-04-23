@@ -34,7 +34,7 @@ const sendOtp = async (req, res) => {
 
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role, otp } = req.body;
+    const { name, email, password, phone, role, otp } = req.body;
 
     const otpRecord = await Otp.findOne({ email });
     if (!otpRecord) {
@@ -56,6 +56,7 @@ const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      phone,
       role,
     });
 
@@ -103,7 +104,8 @@ const updateProfile = async (req, res) => {
       "weight",
       "goalWeight",
       "fitnessGoal",
-      "activityLevel",
+      "numberOfWorkoutDay",
+      "preferredVisitTime",
     ];
 
     // Build update object from only allowed fields
@@ -126,7 +128,7 @@ const updateProfile = async (req, res) => {
 
    
     const REQUIRED_PROFILE_FIELDS = [
-      "age", "gender", "heightCm", "weight", "fitnessGoal", "activityLevel",
+      "age", "gender", "heightCm", "weight", "fitnessGoal", "numberOfWorkoutDay",
     ];
     const allFilled = REQUIRED_PROFILE_FIELDS.every(
       (f) => user[f] !== null && user[f] !== undefined
@@ -141,6 +143,7 @@ const updateProfile = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         age: user.age,
         gender: user.gender,
@@ -148,7 +151,8 @@ const updateProfile = async (req, res) => {
         weight: user.weight,
         goalWeight: user.goalWeight,
         fitnessGoal: user.fitnessGoal,
-        activityLevel: user.activityLevel,
+        numberOfWorkoutDay: user.numberOfWorkoutDay,
+        preferredVisitTime: user.preferredVisitTime,
         profileImage: user.profileImage,
         bannerImage: user.bannerImage,
         profileComplete: user.profileComplete,
