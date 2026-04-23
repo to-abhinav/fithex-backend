@@ -35,12 +35,26 @@ const checkIn = async (req, res) => {
       });
     }
 
+    // Capacity enforcement
+    const gym = await Gym.findById(member.gymId);
+    if (gym && gym.maxCapacity > 0 && gym.currentMembers >= gym.maxCapacity) {
+      return res.status(403).json({
+        message: "Gym is at full capacity. Please try again later.",
+        currentOccupancy: gym.currentMembers,
+        maxCapacity: gym.maxCapacity,
+      });
+    }
+
     const session = await GymSession.create({
       userId,
       gymId: member.gymId,
     });
 
-    // Fire-and-forget — streak failure should never block check-in
+    Gym.findByIdAndUpdate(member.gymId, { $inc: { currentMembers: 1 } }).catch(
+      (err) => console.error("[Occupancy] increment error:", err.message)
+    );
+
+  
     recordActivity(userId, member.gymId)
       .then((streak) => {
         if (!streak) return;
@@ -115,7 +129,12 @@ const checkOut = async (req, res) => {
       { new: true }
     );
 
-    // Check-out notification (fire-and-forget)
+    Gym.findByIdAndUpdate(member.gymId, {
+      $inc: { currentMembers: -1 },
+    }).catch((err) =>
+      console.error("[Occupancy] decrement error:", err.message)
+    );
+
     notificationService
       .send(
         userId,
@@ -254,6 +273,32 @@ const getTodayAttendance = async (req, res) => {
   }
 };
 
+const getLiveOccupancy = async (req, res) => {
+  try {
+    const gym = await Gym.findById(req.params.gymId).select(
+      "name currentMembers maxCapacity"
+    );
+    if (!gym) {
+      return res.status(404).json({ message: "Gym not found" });
+    }
+
+    const occupancyPercent =
+      gym.maxCapacity > 0
+        ? Math.round((gym.currentMembers / gym.maxCapacity) * 100)
+        : 0;
+
+    res.status(200).json({
+      gymName: gym.name,
+      currentOccupancy: gym.currentMembers,
+      maxCapacity: gym.maxCapacity,
+      occupancyPercent,
+      isFull: gym.currentMembers >= gym.maxCapacity,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   checkIn,
   checkOut,
@@ -261,4 +306,5 @@ module.exports = {
   getMyLogs,
   getGymLogs,
   getTodayAttendance,
+  getLiveOccupancy,
 };

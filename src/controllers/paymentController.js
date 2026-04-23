@@ -2,7 +2,7 @@ const Razorpay = require("razorpay");
 const crypto   = require("crypto");
 const Payment  = require("../models/Payment");
 const Plan     = require("../models/PlanSchema");
-const Member   = require("../models/Member");
+const Member   = require("../models/Members");
 const MembershipRequest = require("../models/MembershipRequest");
 const notificationService = require("../services/notificationService");
 const { NOTIFICATION_TYPES } = require("../constants/notificationTypes");
@@ -311,10 +311,94 @@ const getGymPayments = async (req, res) => {
   }
 };
 
+// GET /payment/revenue-summary
+const getRevenueSummary = async (req, res) => {
+  try {
+    const Gym = require("../models/Gym");
+    const gym = await Gym.findOne({ ownerId: req.user });
+    if (!gym) {
+      return res.status(404).json({ message: "Gym not found" });
+    }
+
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    const [weeklyRevenue, monthlyRevenue, yearlyRevenue, allTimeRevenue, planBreakdown] =
+      await Promise.all([
+        Payment.aggregate([
+          { $match: { gymId: gym._id, status: "paid", createdAt: { $gte: startOfWeek } } },
+          { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
+        ]),
+        Payment.aggregate([
+          { $match: { gymId: gym._id, status: "paid", createdAt: { $gte: startOfMonth } } },
+          { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
+        ]),
+        Payment.aggregate([
+          { $match: { gymId: gym._id, status: "paid", createdAt: { $gte: startOfYear } } },
+          { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
+        ]),
+        Payment.aggregate([
+          { $match: { gymId: gym._id, status: "paid" } },
+          { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
+        ]),
+        Payment.aggregate([
+          { $match: { gymId: gym._id, status: "paid" } },
+          {
+            $lookup: {
+              from: "plans",
+              localField: "planId",
+              foreignField: "_id",
+              as: "plan",
+            },
+          },
+          { $unwind: { path: "$plan", preserveNullAndEmptyArrays: true } },
+          {
+            $group: {
+              _id: "$planId",
+              planName: { $first: "$plan.name" },
+              planCategory: { $first: "$plan.category" },
+              totalRevenue: { $sum: "$amount" },
+              paymentCount: { $sum: 1 },
+            },
+          },
+          { $sort: { totalRevenue: -1 } },
+        ]),
+      ]);
+
+    const toRupees = (data) =>
+      data[0] ? { total: Math.round(data[0].total / 100), count: data[0].count } : { total: 0, count: 0 };
+
+    res.json({
+      revenue: {
+        thisWeek: toRupees(weeklyRevenue),
+        thisMonth: toRupees(monthlyRevenue),
+        thisYear: toRupees(yearlyRevenue),
+        allTime: toRupees(allTimeRevenue),
+        currency: "INR",
+      },
+      planBreakdown: planBreakdown.map((p) => ({
+        planId: p._id,
+        planName: p.planName || "Unknown",
+        planCategory: p.planCategory || "Unknown",
+        totalRevenue: Math.round(p.totalRevenue / 100),
+        paymentCount: p.paymentCount,
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   createOrder,
   verifyPayment,
   handleWebhook,
   getMyPayments,
   getGymPayments,
+  getRevenueSummary,
 };

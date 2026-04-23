@@ -79,7 +79,7 @@ const getAllMembers = async (req, res) => {
       return res.status(404).json({ message: "No gym found for this owner" });
     }
 
-    const filter = { gymId: gym._id };  // ✅ now this has an actual value
+    const filter = { gymId: gym._id };  
 
     if (status) {
       filter.status = status;
@@ -107,9 +107,7 @@ const getAllMembers = async (req, res) => {
   }
 };
 
-// ─── Get Single Member ─────────────────────────────────────────
 // GET /members/:id
-// Owner or the member themselves
 const getMemberById = async (req, res) => {
   try {
     const member = await Member.findById(req.params.id)
@@ -121,7 +119,7 @@ const getMemberById = async (req, res) => {
       return res.status(404).json({ message: "Member not found" });
     }
 
-    // days remaining calculation
+    // days remaining 
     const today = new Date();
     const daysRemaining = Math.ceil(
       (new Date(member.expiryDate) - today) / (1000 * 60 * 60 * 24)
@@ -137,7 +135,6 @@ const getMemberById = async (req, res) => {
   }
 };
 
-// ─── Get My Membership (Member's own profile) ──────────────────
 // GET /members/me
 // Member only — uses JWT to find their own membership
 const getMyMembership = async (req, res) => {
@@ -231,7 +228,6 @@ const deactivateMember = async (req, res) => {
   }
 };
 
-// ─── Delete Member ─────────────────────────────────────────────
 // DELETE /members/:id
 // Owner only
 const deleteMember = async (req, res) => {
@@ -250,7 +246,6 @@ const deleteMember = async (req, res) => {
 };
 
 
-// PUT /members/check-expiry
 // Can be called by a cron job or manually
 const checkAndExpireMembers = async (req, res) => {
   try {
@@ -275,6 +270,38 @@ const checkAndExpireMembers = async (req, res) => {
   }
 };
 
+// PUT /members/:id/notes
+const updateMemberNotes = async (req, res) => {
+  try {
+    const gym = await Gym.findOne({ ownerId: req.user });
+    if (!gym) {
+      return res.status(404).json({ message: "No gym found for this owner" });
+    }
+
+    const member = await Member.findOne({
+      _id: req.params.id,
+      gymId: gym._id,
+    });
+    if (!member) {
+      return res.status(404).json({ message: "Member not found in your gym" });
+    }
+
+    const { notes, tags } = req.body;
+
+    if (notes !== undefined) member.notes = notes;
+    if (tags !== undefined) member.tags = tags;
+
+    await member.save();
+
+    res.status(200).json({
+      message: "Member notes updated",
+      member,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createMember,
   getAllMembers,
@@ -283,5 +310,6 @@ module.exports = {
   renewMembership,
   deactivateMember,
   deleteMember,
-  checkAndExpireMembers
+  checkAndExpireMembers,
+  updateMemberNotes,
 };

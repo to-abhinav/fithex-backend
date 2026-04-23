@@ -220,10 +220,45 @@ const getMyReview = async (req, res) => {
 };
 
 
+// POST /gyms/:id/reviews/:reviewId/reply
+const replyToReview = async (req, res) => {
+  try {
+    const gymId = req.params.id;
+
+    const gym = await Gym.findOne({ _id: gymId, ownerId: req.user });
+    if (!gym) {
+      return res.status(403).json({ message: "You are not the owner of this gym" });
+    }
+
+    const review = await Review.findOne({ _id: req.params.reviewId, gymId });
+    if (!review) {
+      return res.status(404).json({ message: "Review not found for this gym" });
+    }
+
+    const { text } = req.body;
+
+    review.ownerReply = {
+      text,
+      repliedAt: new Date(),
+    };
+
+    await review.save();
+
+    res.status(200).json({
+      message: "Reply posted successfully",
+      review,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 module.exports = {
   createReview,
   updateReview,
   deleteReview,
   getGymReviews,
   getMyReview,
+  replyToReview,
 };
