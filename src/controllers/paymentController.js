@@ -4,6 +4,8 @@ const Payment  = require("../models/Payment");
 const Plan     = require("../models/PlanSchema");
 const Member   = require("../models/Member");
 const MembershipRequest = require("../models/MembershipRequest");
+const notificationService = require("../services/notificationService");
+const { NOTIFICATION_TYPES } = require("../constants/notificationTypes");
 
 const razorpay = new Razorpay({
   key_id:     process.env.RAZORPAY_KEY_ID,
@@ -100,10 +102,26 @@ const verifyPayment = async (req, res) => {
 
     if (expectedSignature !== razorpay_signature) {
       // Log this as a failed payment so we have a record of it
-      await Payment.findOneAndUpdate(
+      const failedPayment = await Payment.findOneAndUpdate(
         { razorpayOrderId: razorpay_order_id },
-        { status: "failed" }
+        { status: "failed" },
+        { new: true }
       );
+
+      // Notify user of payment failure
+      if (failedPayment) {
+        notificationService
+          .send(
+            failedPayment.userId,
+            NOTIFICATION_TYPES.PAYMENT_FAILED,
+            "Payment Failed ❌",
+            "Your payment could not be verified. Please try again or contact support.",
+            null,
+            `payment_fail_${razorpay_order_id}`
+          )
+          .catch((err) => console.error("[Notification] payment fail error:", err.message));
+      }
+
       return res.status(400).json({ message: "Invalid payment signature" });
     }
 
@@ -164,6 +182,18 @@ const verifyPayment = async (req, res) => {
       $inc: { currentEnrolledMembers: 1 },
     });
 
+    // Notify successful payment
+    notificationService
+      .send(
+        req.user,
+        NOTIFICATION_TYPES.PAYMENT_SUCCESS,
+        "Payment Successful ✅",
+        "Your payment has been verified and your membership is now active.",
+        { memberId: member._id, expiryDate: member.expiryDate },
+        `payment_${razorpay_order_id}`
+      )
+      .catch((err) => console.error("[Notification] payment success error:", err.message));
+
     res.json({
       message:    "Payment verified. Membership activated.",
       memberId:   member._id,
@@ -223,6 +253,18 @@ const handleWebhook = async (req, res) => {
           await Plan.findByIdAndUpdate(payment.planId, {
             $inc: { currentEnrolledMembers: 1 },
           });
+
+          // Notify user of successful payment (idempotent via refId)
+          notificationService
+            .send(
+              payment.userId,
+              NOTIFICATION_TYPES.PAYMENT_SUCCESS,
+              "Payment Successful ✅",
+              "Your payment has been verified and your membership is now active.",
+              { memberId: member._id, expiryDate: member.expiryDate },
+              `payment_${order_id}`
+            )
+            .catch((err) => console.error("[Notification] webhook payment error:", err.message));
         }
       }
     }

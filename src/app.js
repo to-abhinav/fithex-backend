@@ -12,6 +12,10 @@ const { startAutoCheckoutCron } = require("../cron/autoCheckout");
 const { startStreakEvaluatorCron } = require("../cron/streakEvaluator");
 const entryRoutes = require("./routes/entryRoute");
 const streakRoutes = require("./routes/streakRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const { startMembershipNotifierCron } = require("../cron/membershipNotifier");
+const { startSessionSweeperCron } = require("../cron/sessionSweeper");
+const { startVisitNudgeCron } = require("../cron/visitNudge");
 
 const app = express();
 app.use("/api/payment/webhook", express.raw({ type: "application/json" }));
@@ -32,10 +36,14 @@ app.use("/requests", requestRoutes);
 app.use("/weight", weightRoutes);
 app.use("/entry",entryRoutes)
 app.use("/streaks", streakRoutes);
+app.use("/notifications", notificationRoutes);
 
 
 startAutoCheckoutCron();
 startStreakEvaluatorCron();
+startMembershipNotifierCron();
+startSessionSweeperCron();
+startVisitNudgeCron();
 
 
-module.exports = app;
+module.exports = app;

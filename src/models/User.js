@@ -82,6 +82,13 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    preferredVisitTime: {
+      type: Number,
+      min: 0,
+      max: 23,
+      default: null,
+    },
+
     profileComplete: {
       type: Boolean,
       default: false,

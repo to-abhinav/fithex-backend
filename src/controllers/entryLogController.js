@@ -2,6 +2,8 @@ const GymSession = require("../models/GymSession");
 const Member = require("../models/Members");
 const Gym = require("../models/Gym");
 const { recordActivity } = require("../services/streakService");
+const notificationService = require("../services/notificationService");
+const { NOTIFICATION_TYPES } = require("../constants/notificationTypes");
 
 
 const getActiveMember = async (userId) => {
@@ -39,9 +41,41 @@ const checkIn = async (req, res) => {
     });
 
     // Fire-and-forget — streak failure should never block check-in
-    recordActivity(userId, member.gymId).catch((err) =>
-      console.error("[Streak] Error recording activity:", err.message)
-    );
+    recordActivity(userId, member.gymId)
+      .then((streak) => {
+        if (!streak) return;
+        // Streak milestone notifications
+        if (streak.currentStreak === 1) {
+          notificationService.send(
+            userId,
+            NOTIFICATION_TYPES.STREAK_STARTED,
+            "Streak Started! 🔥",
+            "You've started a new streak. Keep it going!"
+          );
+        } else if (streak.currentStreak === 3) {
+          notificationService.send(
+            userId,
+            NOTIFICATION_TYPES.STREAK_MILESTONE_3,
+            "3-Day Streak! 🎯",
+            "You've hit 3 consecutive days. Consistency is key!"
+          );
+        } else if (streak.currentStreak === 7) {
+          notificationService.send(
+            userId,
+            NOTIFICATION_TYPES.STREAK_MILESTONE_7,
+            "7-Day Streak! 🏆",
+            "One full week of consistency — you're unstoppable!"
+          );
+        }
+      })
+      .catch((err) =>
+        console.error("[Streak] Error recording activity:", err.message)
+      );
+
+    // Check-in notification (fire-and-forget)
+    notificationService
+      .send(userId, NOTIFICATION_TYPES.CHECKIN_CONFIRMED, "Checked In ✅", "Welcome to the gym! Have a great workout.")
+      .catch((err) => console.error("[Notification] checkin error:", err.message));
 
     res.status(201).json({
       message: "Checked in successfully",
@@ -80,6 +114,16 @@ const checkOut = async (req, res) => {
       },
       { new: true }
     );
+
+    // Check-out notification (fire-and-forget)
+    notificationService
+      .send(
+        userId,
+        NOTIFICATION_TYPES.CHECKOUT_CONFIRMED,
+        "Checked Out 👋",
+        `Session complete — ${durationMinutes} minutes. Great job!`
+      )
+      .catch((err) => console.error("[Notification] checkout error:", err.message));
 
     res.status(200).json({
       message: "Checked out successfully",
