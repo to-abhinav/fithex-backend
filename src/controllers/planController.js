@@ -6,7 +6,12 @@ const Gym = require("../models/Gym");
 // Owner only
 const createPlan = async (req, res) => {
   try {
-    const { name, category, price, durationInMonths } = req.body;
+    const {
+      name, category, description, features,
+      price, originalPrice, discountPercent, taxPercent,
+      durationInMonths, maxMembers,
+      offerLabel, offerExpiresAt
+    } = req.body;
 
     // get the owner's gym
     const gym = await Gym.findOne({ ownerId: req.user });
@@ -26,8 +31,16 @@ const createPlan = async (req, res) => {
       gymId: gym._id,
       name,
       category,
+      description,
+      features,
       price,
-      durationInMonths
+      originalPrice,
+      discountPercent,
+      taxPercent,
+      durationInMonths,
+      maxMembers,
+      offerLabel,
+      offerExpiresAt,
     });
 
     res.status(201).json(plan);
@@ -113,7 +126,12 @@ const updatePlan = async (req, res) => {
       return res.status(404).json({ message: "Plan not found or unauthorized" });
     }
 
-    const allowed = ["name", "category", "price", "durationInMonths", "isActive"];
+    const allowed = [
+      "name", "category", "description", "features",
+      "price", "originalPrice", "discountPercent", "taxPercent",
+      "durationInMonths", "maxMembers", "isActive",
+      "offerLabel", "offerExpiresAt",
+    ];
     allowed.forEach(field => {
       if (req.body[field] !== undefined) {
         plan[field] = req.body[field];

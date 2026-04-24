@@ -33,7 +33,7 @@ const validateRegister = [
   body("phone")
     .notEmpty().withMessage("Phone number is required.")
     .isNumeric().withMessage("Phone must be a valid number.")
-    .isLength({min :10, max :10}).withMessage("Phone number must be of 10 digits."),
+    .isLength({ min: 10, max: 15 }).withMessage("Phone number must be between 10 and 15 digits."),
 
   body("role")
     .optional()
