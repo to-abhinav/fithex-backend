@@ -1,9 +1,13 @@
+const crypto = require("crypto");
 const GymSession = require("../models/GymSession");
 const Member = require("../models/Members");
 const Gym = require("../models/Gym");
 const { recordActivity } = require("../services/streakService");
 const notificationService = require("../services/notificationService");
 const { NOTIFICATION_TYPES } = require("../constants/notificationTypes");
+const { isWithinRadius, distanceBetween } = require("../utils/geoUtils");
+
+const CHECKIN_RADIUS_METERS = 100;
 
 
 const getActiveMember = async (userId) => {
@@ -15,9 +19,41 @@ const getOpenSession = async (userId, gymId) => {
 };
 
 
+//qr Generation Owner
+const generateQrSecret = async (req, res) => {
+  try {
+    const gym = await Gym.findOne({ ownerId: req.user });
+    if (!gym) {
+      return res.status(404).json({ message: "No gym found for this owner." });
+    }
+
+    // 32byte hex
+    const secret = crypto.randomBytes(32).toString("hex");
+
+    gym.qrSecret = secret;
+    await gym.save();
+
+    
+    const qrPayload = JSON.stringify({
+      gymId: gym._id.toString(),
+      secret,
+    });
+
+    res.status(200).json({
+      message: "QR secret generated successfully.",
+      qrPayload,
+      hint: "Encode the qrPayload value into a QR code and display it at your gym.",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 const checkIn = async (req, res) => {
   try {
     const userId = req.user;
+    const { qrPayload, latitude, longitude, note } = req.body;
 
     const member = await getActiveMember(userId);
     if (!member) {
@@ -26,7 +62,54 @@ const checkIn = async (req, res) => {
       });
     }
 
-    // Prevent double check-in
+    let qrData;
+    try {
+      qrData = JSON.parse(qrPayload);
+    } catch {
+      return res.status(400).json({
+        message: "Invalid QR code. Please scan a valid gym QR code.",
+      });
+    }
+
+    if (!qrData.gymId || !qrData.secret) {
+      return res.status(400).json({
+        message: "Malformed QR code. Missing gym identifier or secret.",
+      });
+    }
+
+    if (qrData.gymId !== member.gymId.toString()) {
+      return res.status(403).json({
+        message: "This QR code belongs to a different gym. Please scan your gym's QR.",
+      });
+    }
+
+    const gym = await Gym.findById(member.gymId);
+    if (!gym) {
+      return res.status(404).json({ message: "Gym not found." });
+    }
+
+    if (!gym.qrSecret || gym.qrSecret !== qrData.secret) {
+      return res.status(403).json({
+        message: "QR code has expired or is invalid. Ask the gym to regenerate.",
+      });
+    }
+
+    // ── 5. Geolocation check (100 m) ────────────────────────────────
+    const [gymLat,gymLng] = gym.location.coordinates;
+    const userLat = parseFloat(latitude);
+    const userLng = parseFloat(longitude);
+
+    
+
+    if (!isWithinRadius(userLat, userLng, gymLat, gymLng, CHECKIN_RADIUS_METERS)) {
+      console.log("coordinates: "+userLat, userLng, gymLat, gymLng);
+      const distance = distanceBetween(userLat, userLng, gymLat, gymLng);
+      return res.status(403).json({
+        message: `You are ${distance} m away from the gym. You must be within ${CHECKIN_RADIUS_METERS} m to check in.`,
+      });
+    }
+
+    // ── 6. Prevent double check-in ──────────────────────────────────
     const openSession = await getOpenSession(userId, member.gymId);
     if (openSession) {
       return res.status(400).json({
@@ -35,9 +118,8 @@ const checkIn = async (req, res) => {
       });
     }
 
-    // Capacity enforcement
-    const gym = await Gym.findById(member.gymId);
-    if (gym && gym.maxCapacity > 0 && gym.currentMembers >= gym.maxCapacity) {
+    // ── 7. Capacity enforcement ─────────────────────────────────────
+    if (gym.maxCapacity > 0 && gym.currentMembers >= gym.maxCapacity) {
       return res.status(403).json({
         message: "Gym is at full capacity. Please try again later.",
         currentOccupancy: gym.currentMembers,
@@ -45,9 +127,11 @@ const checkIn = async (req, res) => {
       });
     }
 
+    // ── 8. Create session ───────────────────────────────────────────
     const session = await GymSession.create({
       userId,
       gymId: member.gymId,
+      ...(note && { note }),
     });
 
     Gym.findByIdAndUpdate(member.gymId, { $inc: { currentMembers: 1 } }).catch(
@@ -299,7 +383,31 @@ const getLiveOccupancy = async (req, res) => {
   }
 };
 
+const getMyGymLocation = async (req, res) => {
+  try {
+    const userId = req.user;
+
+    const member = await getActiveMember(userId);
+    if (!member) {
+      return res.status(404).json({ message: "No active membership found." });
+    }
+
+    const gym = await Gym.findById(member.gymId).select("name location");
+    if (!gym) {
+      return res.status(404).json({ message: "Gym not found." });
+    }
+
+    res.status(200).json({
+      gymName: gym.name,
+      coordinates: gym.location.coordinates, 
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
+  generateQrSecret,
   checkIn,
   checkOut,
   getMyStatus,
@@ -307,4 +415,5 @@ module.exports = {
   getGymLogs,
   getTodayAttendance,
   getLiveOccupancy,
+  getMyGymLocation,
 };
