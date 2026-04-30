@@ -186,6 +186,33 @@ const gymSchema = new mongoose.Schema(
       default: true,
     },
 
+    socialLinks: {
+      instagram: { type: String, default: "" },
+      facebook:  { type: String, default: "" },
+      youtube:   { type: String, default: "" },
+    },
+
+    equipment: {
+      type: [String],
+      default: [],
+    },
+
+    genderPolicy: {
+      type: String,
+      enum: ["Unisex", "Male Only", "Female Only"],
+      default: "Unisex",
+    },
+
+    minimumAge: {
+      type: Number,
+      default: 16,
+    },
+
+    qrSecret: {
+      type: String,
+      default: "",   // populated when owner generates/regenerates QR
+    },
+
     isFeatured: {
       type: Boolean,
       default: false,

@@ -23,7 +23,7 @@ router.get("/gym/:gymId",   validateGymIdParam, getPlansByGym);
 router.get("/:id",          validatePlanId,     getPlanById);
 
 // owner only routes
-router.post("/",            authMiddleware, isOwner, validateCreatePlan, createPlan);
+router.post("/create",            authMiddleware, isOwner, validateCreatePlan, createPlan);
 router.get("/owner/mine",   authMiddleware, isOwner,                     getMyPlans);
 router.put("/:id",          authMiddleware, isOwner, validateUpdatePlan, updatePlan);
 router.put("/:id/toggle",   authMiddleware, isOwner, validatePlanId,     togglePlan);

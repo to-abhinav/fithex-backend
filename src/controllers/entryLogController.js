@@ -109,7 +109,7 @@ const checkIn = async (req, res) => {
       });
     }
 
-    // ── 6. Prevent double check-in ──────────────────────────────────
+    // Prevent double check-in 
     const openSession = await getOpenSession(userId, member.gymId);
     if (openSession) {
       return res.status(400).json({
@@ -118,7 +118,7 @@ const checkIn = async (req, res) => {
       });
     }
 
-    // ── 7. Capacity enforcement ─────────────────────────────────────
+    // ── 7. Capacity enforcement 
     if (gym.maxCapacity > 0 && gym.currentMembers >= gym.maxCapacity) {
       return res.status(403).json({
         message: "Gym is at full capacity. Please try again later.",
@@ -127,7 +127,7 @@ const checkIn = async (req, res) => {
       });
     }
 
-    // ── 8. Create session ───────────────────────────────────────────
+    //  8. Create session 
     const session = await GymSession.create({
       userId,
       gymId: member.gymId,
@@ -147,21 +147,21 @@ const checkIn = async (req, res) => {
           notificationService.send(
             userId,
             NOTIFICATION_TYPES.STREAK_STARTED,
-            "Streak Started! 🔥",
+            "Streak Started! ",
             "You've started a new streak. Keep it going!"
           );
         } else if (streak.currentStreak === 3) {
           notificationService.send(
             userId,
             NOTIFICATION_TYPES.STREAK_MILESTONE_3,
-            "3-Day Streak! 🎯",
+            "3-Day Streak! ",
             "You've hit 3 consecutive days. Consistency is key!"
           );
         } else if (streak.currentStreak === 7) {
           notificationService.send(
             userId,
             NOTIFICATION_TYPES.STREAK_MILESTONE_7,
-            "7-Day Streak! 🏆",
+            "7-Day Streak! ",
             "One full week of consistency — you're unstoppable!"
           );
         }
@@ -170,9 +170,9 @@ const checkIn = async (req, res) => {
         console.error("[Streak] Error recording activity:", err.message)
       );
 
-    // Check-in notification (fire-and-forget)
+    // Check-in notification 
     notificationService
-      .send(userId, NOTIFICATION_TYPES.CHECKIN_CONFIRMED, "Checked In ✅", "Welcome to the gym! Have a great workout.")
+      .send(userId, NOTIFICATION_TYPES.CHECKIN_CONFIRMED, "Checked In ", "Welcome to the gym! Have a great workout.")
       .catch((err) => console.error("[Notification] checkin error:", err.message));
 
     res.status(201).json({

@@ -7,7 +7,8 @@ const VALID_AMENITIES = [
   "Cardio", "Crossfit", "Yoga", "Zumba", "Personal Trainer",
   "WiFi", "Protein Bar", "Cafe",
 ];
-const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/; 
+const VALID_GENDER_POLICY = ["Unisex", "Male Only", "Female Only"];
+const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 
 
@@ -101,6 +102,34 @@ const validateCreateGym = [
     .optional()
     .isInt({ min: 1 }).withMessage("maxCapacity must be a positive integer."),
 
+  body("socialLinks.instagram")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isURL().withMessage("Instagram link must be a valid URL."),
+
+  body("socialLinks.facebook")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isURL().withMessage("Facebook link must be a valid URL."),
+
+  body("socialLinks.youtube")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isURL().withMessage("YouTube link must be a valid URL."),
+
+  body("equipment")
+    .optional()
+    .isArray().withMessage("equipment must be an array of strings."),
+
+  body("genderPolicy")
+    .optional()
+    .isIn(VALID_GENDER_POLICY)
+    .withMessage(`genderPolicy must be one of: ${VALID_GENDER_POLICY.join(", ")}.`),
+
+  body("minimumAge")
+    .optional()
+    .isInt({ min: 10, max: 100 }).withMessage("minimumAge must be an integer between 10 and 100."),
+
   timingsValidator,
   validate,
 ];
@@ -161,6 +190,34 @@ const validateUpdateGym = [
   body("maxCapacity")
     .optional()
     .isInt({ min: 1 }).withMessage("maxCapacity must be a positive integer."),
+
+  body("socialLinks.instagram")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isURL().withMessage("Instagram link must be a valid URL."),
+
+  body("socialLinks.facebook")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isURL().withMessage("Facebook link must be a valid URL."),
+
+  body("socialLinks.youtube")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isURL().withMessage("YouTube link must be a valid URL."),
+
+  body("equipment")
+    .optional()
+    .isArray().withMessage("equipment must be an array of strings."),
+
+  body("genderPolicy")
+    .optional()
+    .isIn(VALID_GENDER_POLICY)
+    .withMessage(`genderPolicy must be one of: ${VALID_GENDER_POLICY.join(", ")}.`),
+
+  body("minimumAge")
+    .optional()
+    .isInt({ min: 10, max: 100 }).withMessage("minimumAge must be an integer between 10 and 100."),
 
   timingsValidator,
   validate,

@@ -22,7 +22,7 @@ router.get("/nearby",      validateNearbyGyms, getNearbyGyms);
 router.get("/search",      validateSearchGyms, searchGyms);
 router.get("/:id",         validateGymId,      getGymById);
 
-router.post("/",                       authMiddleware, isOwner, validateCreateGym,      createGym);
+router.post("/create-gym",                       authMiddleware, isOwner, validateCreateGym,      createGym);
 router.get("/owner/mine",              authMiddleware, isOwner,                         getMyGym);
 router.put("/:id",                     authMiddleware, isOwner, validateUpdateGym,       updateGym);
 router.put("/:id/images",              authMiddleware, isOwner, validateUpdateGymImages, updateGymImages);

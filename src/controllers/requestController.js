@@ -22,10 +22,13 @@ const applyToGym = async (req, res) => {
       return res.status(404).json({ message: "Gym not found or inactive" });
     }
 
-    // check plan exists and belongs to this gym
-    const plan = await Plan.findOne({ _id: planId, gymId, isActive: true });
+    const plan = await Plan.findOne({ _id: planId, isActive: true });
+    console.log(" plan in request --", plan);
     if (!plan) {
       return res.status(404).json({ message: "Plan not found or inactive" });
+    }
+    if (plan.gymId.toString() !== gymId) {
+      return res.status(400).json({ message: "Plan does not belong to this gym" });
     }
 
     // check user isn't already an active member of this gym

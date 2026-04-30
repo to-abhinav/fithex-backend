@@ -3,7 +3,6 @@ const User = require("../models/User");
 
 
 // POST /gyms
-// Owner only — one owner can only create one gym
 const createGym = async (req, res) => {
   try {
     // check if owner already has a gym
@@ -15,14 +14,16 @@ const createGym = async (req, res) => {
     const {
       name, description, contactNumber, whatsappNumber,
       email, website, address, location,
-      amenities, timings, maxCapacity
+      amenities, timings, maxCapacity,
+      socialLinks, equipment, genderPolicy, minimumAge
     } = req.body;
 
     const gym = await Gym.create({
       ownerId: req.user,
       name, description, contactNumber, whatsappNumber,
       email, website, address, location,
-      amenities, timings, maxCapacity
+      amenities, timings, maxCapacity,
+      socialLinks, equipment, genderPolicy, minimumAge
     });
 
     res.status(201).json(gym);
@@ -34,7 +35,6 @@ const createGym = async (req, res) => {
 
 //  Get My Gym 
 // GET /gyms/mine
-// Owner only — owner sees their own gym dashboard
 const getMyGym = async (req, res) => {
   try {
     const gym = await Gym.findOne({ ownerId: req.user });
@@ -51,7 +51,6 @@ const getMyGym = async (req, res) => {
 
 
 // GET /gyms/:id
-// Public anyone can veiw gym details
 const getGymById = async (req, res) => {
   try {
     const gym = await Gym.findById(req.params.id)
@@ -111,7 +110,7 @@ const getNearbyGyms = async (req, res) => {
 
 
 
-// Public — text search by name or city
+// Public text search by name or city
 const searchGyms = async (req, res) => {
   try {
     const { q, city } = req.query;
@@ -159,7 +158,8 @@ const updateGym = async (req, res) => {
     const allowed = [
       "name", "description", "contactNumber", "whatsappNumber",
       "email", "website", "address", "amenities",
-      "timings", "maxCapacity", "isActive"
+      "timings", "maxCapacity", "isActive",
+      "socialLinks", "equipment", "genderPolicy", "minimumAge",
     ];
 
     allowed.forEach(field => {

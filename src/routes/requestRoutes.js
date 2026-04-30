@@ -16,7 +16,7 @@ const {
   validateRequestId,
 } = require("../validators/requestValidator");
 
-router.post("/",                   authMiddleware, isMember, validateApplyToGym,    applyToGym);
+router.post("/create",                   authMiddleware, isMember, validateApplyToGym,    applyToGym);
 router.get("/mine",                authMiddleware, isMember,                        getMyRequests);
 router.get("/gym",                 authMiddleware, isOwner,                         getGymRequests);
 router.put("/:id/approve",         authMiddleware, isOwner,  validateRequestId,     approveRequest);

@@ -35,7 +35,6 @@ const notificationSchema = new mongoose.Schema(
     
     refId: {
       type: String,
-      default: null,
     },
 
     read: {
