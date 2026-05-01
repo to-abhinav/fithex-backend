@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
-const bcypt = require("bcryptjs");
+const bcrypt = require("bcryptjs");
 
 
 
@@ -18,15 +18,17 @@ const loginUser = async (req,res) =>{
             return res.status(400).json({message:"Invalid email or password"});
         }
 
-        const isMatch = await bcypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.password);
 
         if(!isMatch){
             return res.status(400).json({message:"Invalid email or password"});
         }
 
+        const { password: _pw, ...safeUser } = user.toObject();
+
         res.json({
-            token:generateToken(user._id, user.role),
-            user
+            token: generateToken(user._id, user.role),
+            user: safeUser
         })
     } catch (error) {
         console.error(error.message);

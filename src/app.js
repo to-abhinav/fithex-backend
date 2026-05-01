@@ -20,6 +20,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const closureRoutes = require("./routes/closureRoutes");
 const announcementRoutes = require("./routes/announcementRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const { notFound, errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
 app.use("/api/payment/webhook", express.raw({ type: "application/json" }));
@@ -53,5 +54,7 @@ startMembershipNotifierCron();
 startSessionSweeperCron();
 startVisitNudgeCron();
 
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;
