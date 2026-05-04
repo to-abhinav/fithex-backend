@@ -1,5 +1,7 @@
+const mongoose = require("mongoose");
 const Gym = require("../models/Gym");
 const User = require("../models/User");
+const { uploadToCloudinary } = require("../config/cloudinary");
 
 
 // POST /gyms
@@ -84,9 +86,8 @@ const getNearbyGyms = async (req, res) => {
 
     const radiusInMeters = parseFloat(radius) * 1000; // km to meters
 
-    const gyms = await Gym.find({
+    let gyms = await Gym.find({
       isActive: true,
-      isVerified: true,
       location: {
         $near: {
           $geometry: {
@@ -96,7 +97,13 @@ const getNearbyGyms = async (req, res) => {
           $maxDistance: radiusInMeters
         }
       }
-    }).select("name address images.cover images.profile rating contactNumber amenities location currentMembers maxCapacity");
+    }).select("name address images.cover images.profile rating contactNumber amenities location currentMembers maxCapacity timings isVerified isFeatured");
+
+    if (gyms.length === 0) {
+      gyms = await Gym.find({ isActive: true })
+        .select("name address images.cover images.profile rating contactNumber amenities location currentMembers maxCapacity timings isVerified isFeatured")
+        .limit(20);
+    }
 
     res.status(200).json({
       total: gyms.length,
@@ -119,9 +126,9 @@ const searchGyms = async (req, res) => {
       return res.status(400).json({ message: "Provide a Gym name or city" });
     }
 
-    const filter = { isActive: true, isVerified: true };
+    const filter = { isActive: true };
 
-    // text search on name + city index
+  
     if (q) {
       filter.$text = { $search: q };
     }
@@ -160,6 +167,7 @@ const updateGym = async (req, res) => {
       "email", "website", "address", "amenities",
       "timings", "maxCapacity", "isActive",
       "socialLinks", "equipment", "genderPolicy", "minimumAge",
+      "images",
     ];
 
     allowed.forEach(field => {
@@ -176,25 +184,55 @@ const updateGym = async (req, res) => {
   }
 };
 
-// Update Gym Images
 // PUT /gyms/:id/images
-// Owner only — update profile, cover, gallery separately
 const updateGymImages = async (req, res) => {
   try {
+    // Validate ID (since we removed express-validator for this route)
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid gym ID." });
+    }
+
     const gym = await Gym.findOne({ _id: req.params.id, ownerId: req.user });
     if (!gym) {
       return res.status(404).json({ message: "Gym not found or unauthorized" });
     }
 
-    const { profile, cover, gallery } = req.body;
+    if (!gym.images) gym.images = {};
 
-    if (profile !== undefined) gym.images.profile = profile;
-    if (cover !== undefined)   gym.images.cover = cover;
-    if (gallery !== undefined) {
-      if (gallery.length > 15) {
+    if (req.files?.profileImage?.[0]) {
+      const file = req.files.profileImage[0];
+      const result = await uploadToCloudinary(file.buffer, {
+        folder: `fithex/gyms/${gym._id}/profile`,
+        transformation: [{ width: 400, height: 400, crop: "fill" }],
+      });
+      gym.images.profile = result.secure_url;
+    }
+
+    if (req.files?.bannerImage?.[0]) {
+      const file = req.files.bannerImage[0];
+      const result = await uploadToCloudinary(file.buffer, {
+        folder: `fithex/gyms/${gym._id}/cover`,
+        transformation: [{ width: 1200, height: 675, crop: "fill" }],
+      });
+      gym.images.cover = result.secure_url;
+    }
+
+    // Gallery Images 
+    if (req.files?.galleryImages?.length) {
+      if ((gym.images.gallery?.length || 0) + req.files.galleryImages.length > 15) {
         return res.status(400).json({ message: "Max 15 gallery images allowed" });
       }
-      gym.images.gallery = gallery;
+
+      const uploads = await Promise.all(
+        req.files.galleryImages.map((file) =>
+          uploadToCloudinary(file.buffer, {
+            folder: `fithex/gyms/${gym._id}/gallery`,
+          })
+        )
+      );
+
+      const newUrls = uploads.map((r) => r.secure_url);
+      gym.images.gallery = [...(gym.images.gallery || []), ...newUrls];
     }
 
     await gym.save();
