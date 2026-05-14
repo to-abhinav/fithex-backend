@@ -56,7 +56,7 @@ const getMyGym = async (req, res) => {
 const getGymById = async (req, res) => {
   try {
     const gym = await Gym.findById(req.params.id)
-      .populate("ownerId", "name email");
+      .populate("ownerId", "name email phone profileImage createdAt");
 
     if (!gym) {
       return res.status(404).json({ message: "Gym not found" });

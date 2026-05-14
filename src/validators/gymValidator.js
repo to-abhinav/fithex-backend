@@ -3,9 +3,10 @@ const validate = require("./validate");
 
 const VALID_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const VALID_AMENITIES = [
-  "AC", "Parking", "Locker", "Shower", "Steam", "Sauna",
-  "Cardio", "Crossfit", "Yoga", "Zumba", "Personal Trainer",
-  "WiFi", "Protein Bar", "Cafe",
+  "WiFi", "Parking", "Locker Room", "Shower", "AC",
+  "Changing Room", "Cafeteria", "Steam Room", "Swimming Pool",
+  "Sauna", "Cardio Zone", "Free Weights", "Personal Training",
+  "Group Classes",
 ];
 const VALID_GENDER_POLICY = ["Unisex", "Male Only", "Female Only"];
 const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -80,6 +81,7 @@ const validateCreateGym = [
     .matches(/^[1-9][0-9]{5}$/).withMessage("Pincode must be a valid 6-digit Indian pincode."),
 
   body("location.coordinates")
+    .optional()
     .isArray({ min: 2, max: 2 }).withMessage("location.coordinates must be [longitude, latitude].")
     .custom(([lng, lat]) => {
       if (typeof lng !== "number" || lng < -180 || lng > 180)
@@ -272,13 +274,13 @@ const validateUpdateTimings = [
 ];
 
 const validateNearbyGyms = [
-  query("lat")
-    .notEmpty().withMessage("lat (latitude) is required.")
-    .isFloat({ min: -90, max: 90 }).withMessage("lat must be a valid latitude (-90 to 90)."),
+  query("latitude")
+    .notEmpty().withMessage("latitude is required.")
+    .isFloat({ min: -90, max: 90 }).withMessage("latitude must be a valid latitude (-90 to 90)."),
 
-  query("lng")
-    .notEmpty().withMessage("lng (longitude) is required.")
-    .isFloat({ min: -180, max: 180 }).withMessage("lng must be a valid longitude (-180 to 180)."),
+  query("longitude")
+    .notEmpty().withMessage("longitude is required.")
+    .isFloat({ min: -180, max: 180 }).withMessage("longitude must be a valid longitude (-180 to 180)."),
 
   query("radius")
     .optional()
@@ -289,9 +291,14 @@ const validateNearbyGyms = [
 
 const validateSearchGyms = [
   query("q")
+    .optional()
     .trim()
-    .notEmpty().withMessage("Search query 'q' is required.")
     .isLength({ min: 2, max: 100 }).withMessage("Search query must be between 2 and 100 characters."),
+
+  query("city")
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 }).withMessage("City must be between 2 and 100 characters."),
 
   validate,
 ];

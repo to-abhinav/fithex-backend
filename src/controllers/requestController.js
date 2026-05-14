@@ -118,7 +118,7 @@ const getGymRequests = async (req, res) => {
     }
 
     const requests = await Request.find(filter)
-      .populate("userId", "name email")
+      .populate("userId", "name email phone profileImage")
       .populate("planId", "name price durationInMonths")
       .sort({ createdAt: -1 });
 

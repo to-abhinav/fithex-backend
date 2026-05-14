@@ -30,6 +30,17 @@ const uploadBanner = multer({
   fileFilter: imageFileFilter,
 });
 
+// Multer middleware for gym image uploads (profile, banner, gallery)
+const uploadGymImages = multer({
+  storage: memoryStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB per file
+  fileFilter: imageFileFilter,
+}).fields([
+  { name: 'profileImage', maxCount: 1 },
+  { name: 'bannerImage', maxCount: 1 },
+  { name: 'galleryImages', maxCount: 15 },
+]);
+
 /**
  * Upload a buffer to Cloudinary and return { secure_url, public_id }.
  * @param {Buffer} buffer
@@ -45,4 +56,4 @@ const uploadToCloudinary = (buffer, options = {}) => {
   });
 };
 
-module.exports = { cloudinary, uploadProfile, uploadBanner, uploadToCloudinary };
+module.exports = { cloudinary, uploadProfile, uploadBanner, uploadGymImages, uploadToCloudinary };

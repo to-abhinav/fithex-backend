@@ -100,7 +100,7 @@ const gymSchema = new mongoose.Schema(
 
       coordinates: {
         type: [Number], // [longitude, latitude]
-        required: true,
+        default: [0, 0],
       },
     },
 
@@ -128,20 +128,20 @@ const gymSchema = new mongoose.Schema(
       type: [String],
 
       enum: [
-        "AC",
-        "Parking",
-        "Locker",
-        "Shower",
-        "Steam",
-        "Sauna",
-        "Cardio",
-        "Crossfit",
-        "Yoga",
-        "Zumba",
-        "Personal Trainer",
         "WiFi",
-        "Protein Bar",
-        "Cafe",
+        "Parking",
+        "Locker Room",
+        "Shower",
+        "AC",
+        "Changing Room",
+        "Cafeteria",
+        "Steam Room",
+        "Swimming Pool",
+        "Sauna",
+        "Cardio Zone",
+        "Free Weights",
+        "Personal Training",
+        "Group Classes",
       ],
 
       default: [],
