@@ -1,6 +1,4 @@
-/**
- * Notification type constants for the MVP notification system.
- */
+
 
 const NOTIFICATION_TYPES = Object.freeze({
   MEMBERSHIP_EXPIRING_3D: "membership_expiring_3d",
@@ -25,6 +23,8 @@ const NOTIFICATION_TYPES = Object.freeze({
 
   ANNOUNCEMENT: "announcement",
 
+  MEMBERSHIP_REQUEST_RECEIVED: "membership_request_received",
+  MEMBERSHIP_REJECTED: "membership_rejected",
 });
 
 const NOTIFICATION_TYPE_VALUES = Object.values(NOTIFICATION_TYPES);
