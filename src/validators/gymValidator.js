@@ -308,6 +308,22 @@ const validateGymId = [
   validate,
 ];
 
+const validateRazorpayCredentials = [
+  param("id").isMongoId().withMessage("Invalid gym ID."),
+
+  body("razorpayKeyId")
+    .trim()
+    .notEmpty().withMessage("Razorpay Key ID is required.")
+    .isLength({ min: 10, max: 100 }).withMessage("Razorpay Key ID must be between 10 and 100 characters."),
+
+  body("razorpayKeySecret")
+    .trim()
+    .notEmpty().withMessage("Razorpay Key Secret is required.")
+    .isLength({ min: 10, max: 100 }).withMessage("Razorpay Key Secret must be between 10 and 100 characters."),
+
+  validate,
+];
+
 module.exports = {
   validateCreateGym,
   validateUpdateGym,
@@ -316,4 +332,6 @@ module.exports = {
   validateNearbyGyms,
   validateSearchGyms,
   validateGymId,
+  validateRazorpayCredentials,
 };
+
