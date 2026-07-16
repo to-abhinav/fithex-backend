@@ -26,6 +26,10 @@ const validateVerifyPayment = [
     .notEmpty().withMessage("razorpay_signature is required.")
     .isString().withMessage("razorpay_signature must be a string."),
 
+  body("gymId")
+    .notEmpty().withMessage("gymId is required.")
+    .isMongoId().withMessage("gymId must be a valid MongoDB ObjectId."),
+
   validate,
 ];
 
