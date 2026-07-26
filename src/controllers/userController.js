@@ -4,6 +4,19 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { generateOtp, sendOtpEmail } = require("../services/otpService");
 
+const Notification = require("../models/Notification");
+const MembershipRequest = require("../models/MembershipRequest");
+const Members = require("../models/Members");
+const WeightLog = require("../models/WeightLog");
+const Streak = require("../models/Streak");
+const GymSession = require("../models/GymSession");
+const Review = require("../models/Review");
+const Payment = require("../models/Payment");
+const Gym = require("../models/Gym");
+const Plan = require("../models/PlanSchema");
+const Announcement = require("../models/Announcement");
+const GymClosure = require("../models/GymClosure");
+
 const generateToken = (id, role) =>
   jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
 
@@ -11,22 +24,32 @@ const generateToken = (id, role) =>
 const sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
+    console.log("[SEND-OTP] Request received for email:", email);
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      console.log("[SEND-OTP] Email already registered:", email);
       return res.status(400).json({ message: "Email is already registered." });
     }
 
     const otp = generateOtp();
+    console.log("[SEND-OTP] Generated OTP for:", email);
 
     await Otp.deleteMany({ email });
     await Otp.create({ email, otp });
+    console.log("[SEND-OTP] OTP saved to DB for:", email);
 
+    console.log("[SEND-OTP] Calling sendOtpEmail...");
     await sendOtpEmail(email, otp);
+    console.log("[SEND-OTP] ✅ OTP email sent successfully to:", email);
 
     res.status(200).json({ message: "OTP sent successfully. Check your email." });
   } catch (error) {
-    console.error("sendOtp error:", error.message);
+    console.error("[SEND-OTP] ❌ FULL ERROR:");
+    console.error("[SEND-OTP] Name:", error.name);
+    console.error("[SEND-OTP] Message:", error.message);
+    console.error("[SEND-OTP] Code:", error.code);
+    console.error("[SEND-OTP] Stack:", error.stack);
     res.status(500).json({ message: "Failed to send OTP. Please try again." });
   }
 };
@@ -165,9 +188,125 @@ const updateProfile = async (req, res) => {
 };
 
 
+/** PUT /users/push-token  (protected) */
+const savePushToken = async (req, res) => {
+  try {
+    const { expoPushToken } = req.body;
+    if (!expoPushToken) {
+      return res.status(400).json({ message: "expoPushToken is required" });
+    }
+    await User.findByIdAndUpdate(req.user, { expoPushToken });
+    res.status(200).json({ message: "Push token saved" });
+  } catch (error) {
+    console.error("savePushToken error:", error.message);
+    res.status(500).json({ message: "Failed to save push token." });
+  }
+};
+
+
+/** PUT /users/change-password  (protected) */
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current and new passwords are required." });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters." });
+    }
+
+    if (!/\d/.test(newPassword)) {
+      return res.status(400).json({ message: "New password must contain at least one number." });
+    }
+
+    // Fetch user WITH password field
+    const user = await User.findById(req.user);
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Current password is incorrect." });
+    }
+
+    // Hash and save new password
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({ message: "Password changed successfully." });
+  } catch (error) {
+    console.error("changePassword error:", error.message);
+    res.status(500).json({ message: "Failed to change password." });
+  }
+};
+
+
+/** DELETE /users/account  (protected) */
+const deleteAccount = async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: "Password is required to delete your account." });
+    }
+
+    const user = await User.findById(req.user);
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    // Verify password before deletion
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Incorrect password." });
+    }
+
+    // ── Cascade-delete all user-related data ──────────────────────────────
+    await Promise.all([
+      Notification.deleteMany({ userId: req.user }),
+      MembershipRequest.deleteMany({ userId: req.user }),
+      Members.deleteMany({ userId: req.user }),
+      WeightLog.deleteMany({ userId: req.user }),
+      Streak.deleteMany({ userId: req.user }),
+      GymSession.deleteMany({ userId: req.user }),
+      Review.deleteMany({ userId: req.user }),
+      Payment.deleteMany({ userId: req.user }),
+    ]);
+
+    // ── If owner, also delete gym and related gym data ─────────────────────
+    if (user.role === "owner") {
+      const gym = await Gym.findOne({ ownerId: req.user });
+      if (gym) {
+        await Promise.all([
+          Plan.deleteMany({ gymId: gym._id }),
+          Announcement.deleteMany({ gymId: gym._id }),
+          GymClosure.deleteMany({ gymId: gym._id }),
+          // Also clean up membership requests and sessions tied to this gym
+          MembershipRequest.deleteMany({ gymId: gym._id }),
+          GymSession.deleteMany({ gymId: gym._id }),
+          Members.deleteMany({ gymId: gym._id }),
+        ]);
+        await Gym.findByIdAndDelete(gym._id);
+      }
+    }
+
+    // ── Finally delete the user ────────────────────────────────────────────
+    await User.findByIdAndDelete(req.user);
+
+    res.status(200).json({ message: "Account deleted successfully." });
+  } catch (error) {
+    console.error("deleteAccount error:", error.message);
+    res.status(500).json({ message: "Failed to delete account." });
+  }
+};
+
+
 module.exports = {
   sendOtp,
   registerUser,
   getProfile,
   updateProfile,
+  savePushToken,
+  changePassword,
+  deleteAccount,
 };
