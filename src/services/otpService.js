@@ -20,7 +20,27 @@ const createTransporter = () => {
 
 
 const sendOtpEmail = async (toEmail, otp) => {
+  console.log("──── [OTP-EMAIL] START ────");
+  console.log("[OTP-EMAIL] Recipient:", toEmail);
+  console.log("[OTP-EMAIL] EMAIL_SERVICE:", process.env.EMAIL_SERVICE || "(not set, defaulting to gmail)");
+  console.log("[OTP-EMAIL] EMAIL_USER:", process.env.EMAIL_USER || "(NOT SET!)");
+  console.log("[OTP-EMAIL] EMAIL_PASS set:", !!process.env.EMAIL_PASS, "| length:", (process.env.EMAIL_PASS || "").length);
+
   const transporter = createTransporter();
+
+  try {
+    console.log("[OTP-EMAIL] Verifying transporter connection...");
+    await transporter.verify();
+    console.log("[OTP-EMAIL] ✅ Transporter verified — SMTP connection OK");
+  } catch (verifyErr) {
+    console.error("[OTP-EMAIL] ❌ Transporter verification FAILED:");
+    console.error("[OTP-EMAIL] Error name:", verifyErr.name);
+    console.error("[OTP-EMAIL] Error message:", verifyErr.message);
+    console.error("[OTP-EMAIL] Error code:", verifyErr.code);
+    console.error("[OTP-EMAIL] Error response:", verifyErr.response);
+    console.error("[OTP-EMAIL] Full error:", verifyErr);
+    throw verifyErr; // re-throw so caller knows it failed
+  }
 
  const mailOptions = {
   from: `"FitHex" <${process.env.EMAIL_USER}>`,
@@ -127,7 +147,25 @@ const sendOtpEmail = async (toEmail, otp) => {
     </div>
   `,
 };
-  await transporter.sendMail(mailOptions);
+  console.log("[OTP-EMAIL] Sending mail to:", toEmail);
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("[OTP-EMAIL] ✅ Mail sent successfully!");
+    console.log("[OTP-EMAIL] Response:", info.response);
+    console.log("[OTP-EMAIL] MessageId:", info.messageId);
+    console.log("──── [OTP-EMAIL] END ────");
+  } catch (sendErr) {
+    console.error("[OTP-EMAIL] ❌ sendMail FAILED:");
+    console.error("[OTP-EMAIL] Error name:", sendErr.name);
+    console.error("[OTP-EMAIL] Error message:", sendErr.message);
+    console.error("[OTP-EMAIL] Error code:", sendErr.code);
+    console.error("[OTP-EMAIL] Error command:", sendErr.command);
+    console.error("[OTP-EMAIL] Error response:", sendErr.response);
+    console.error("[OTP-EMAIL] Error responseCode:", sendErr.responseCode);
+    console.error("[OTP-EMAIL] Full error:", sendErr);
+    console.log("──── [OTP-EMAIL] END (FAILED) ────");
+    throw sendErr;
+  }
 };
 
 module.exports = { generateOtp, sendOtpEmail };
