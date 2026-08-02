@@ -109,9 +109,17 @@ const gymSchema = new mongoose.Schema(
         type: String,
         default: "",
       },
+      profilePublicId: {
+        type: String,
+        default: null,
+      },
       cover: {
         type: String,
         default: "",
+      },
+      coverPublicId: {
+        type: String,
+        default: null,
       },
 
       gallery: {
@@ -210,10 +218,70 @@ const gymSchema = new mongoose.Schema(
 
     qrSecret: {
       type: String,
-      default: "",   // populated when owner generates/regenerates QR
+      default: "",   
     },
 
     isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+
+    razorpayKeyId: {
+      type: String,
+      default: "",  
+    },
+
+    razorpayKeySecret: {
+      type: String,
+      default: "",    
+    },
+
+    // Razorpay Route 
+    razorpayLinkedAccountId: {
+      type: String,
+      default: "",   
+    },
+
+    pan: {
+      type: String,
+      default: "",
+    },
+
+    gst: {
+      type: String,
+      default: "",   // optional
+    },
+
+    platformFeePercent: {
+      type: Number,
+      default: 10,
+      min: 0,
+      max: 100,
+    },
+
+    isRouteEnabled: {
+      type: Boolean,
+      default: false,
+    },
+
+    razorpayStakeholderId: {
+      type: String,
+      default: "",
+    },
+
+    razorpayProductConfigId: {
+      type: String,
+      default: "",
+    },
+
+        onboardingStep: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 4,
+    },
+
+    needsAttention: {
       type: Boolean,
       default: false,
     },
