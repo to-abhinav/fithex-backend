@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 const Gym = require("../models/Gym");
 const User = require("../models/User");
-const { uploadToCloudinary } = require("../config/cloudinary");
+const { cloudinary, uploadToCloudinary } = require("../config/cloudinary");
+const { encrypt, decrypt } = require("../utils/encryption");
 
 
 // POST /gyms
@@ -56,7 +57,7 @@ const getMyGym = async (req, res) => {
 const getGymById = async (req, res) => {
   try {
     const gym = await Gym.findById(req.params.id)
-      .populate("ownerId", "name email phone profileImage createdAt");
+      .populate("ownerId", "name email profileImage createdAt");
 
     if (!gym) {
       return res.status(404).json({ message: "Gym not found" });
@@ -201,20 +202,34 @@ const updateGymImages = async (req, res) => {
 
     if (req.files?.profileImage?.[0]) {
       const file = req.files.profileImage[0];
+
+      // Delete old Cloudinary asset before uploading the new one
+      if (gym.images.profilePublicId) {
+        await cloudinary.uploader.destroy(gym.images.profilePublicId);
+      }
+
       const result = await uploadToCloudinary(file.buffer, {
         folder: `fithex/gyms/${gym._id}/profile`,
         transformation: [{ width: 400, height: 400, crop: "fill" }],
       });
       gym.images.profile = result.secure_url;
+      gym.images.profilePublicId = result.public_id;
     }
 
     if (req.files?.bannerImage?.[0]) {
       const file = req.files.bannerImage[0];
+
+      // Delete old Cloudinary asset before uploading the new one
+      if (gym.images.coverPublicId) {
+        await cloudinary.uploader.destroy(gym.images.coverPublicId);
+      }
+
       const result = await uploadToCloudinary(file.buffer, {
         folder: `fithex/gyms/${gym._id}/cover`,
         transformation: [{ width: 1200, height: 675, crop: "fill" }],
       });
       gym.images.cover = result.secure_url;
+      gym.images.coverPublicId = result.public_id;
     }
 
     // Gallery Images 
@@ -268,9 +283,6 @@ const updateTimings = async (req, res) => {
   }
 };
 
-// Toggle Gym Active Status
-// PUT /gyms/:id/toggle-status
-//temporarily close or reopen the gym
 const toggleGymStatus = async (req, res) => {
   try {
     const gym = await Gym.findOne({ _id: req.params.id, ownerId: req.user });
@@ -306,6 +318,58 @@ const deleteGym = async (req, res) => {
   }
 };
 
+const saveRazorpayCredentials = async (req, res) => {
+  try {
+    const gym = await Gym.findOne({ _id: req.params.id, ownerId: req.user });
+    if (!gym) {
+      return res.status(404).json({ message: "Gym not found or unauthorized" });
+    }
+
+    const { razorpayKeyId, razorpayKeySecret } = req.body;
+
+    gym.razorpayKeyId     = encrypt(razorpayKeyId);
+    gym.razorpayKeySecret = encrypt(razorpayKeySecret);
+    await gym.save();
+
+    const maskedKeyId = razorpayKeyId.slice(0, 8) + "••••" + razorpayKeyId.slice(-4);
+
+    res.status(200).json({
+      message: "Razorpay credentials saved successfully",
+      maskedKeyId,
+      isConfigured: true,
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Failed to save credentials", error: error.message });
+  }
+};
+
+const getRazorpayStatus = async (req, res) => {
+  try {
+    const gym = await Gym.findOne({ _id: req.params.id, ownerId: req.user });
+    if (!gym) {
+      return res.status(404).json({ message: "Gym not found or unauthorized" });
+    }
+
+    const isConfigured = !!(gym.razorpayKeyId && gym.razorpayKeySecret);
+    let maskedKeyId = "";
+
+    if (isConfigured) {
+      try {
+        const decryptedKeyId = decrypt(gym.razorpayKeyId);
+        maskedKeyId = decryptedKeyId.slice(0, 8) + "••••" + decryptedKeyId.slice(-4);
+      } catch {
+        maskedKeyId = "••••••••";
+      }
+    }
+
+    res.status(200).json({ isConfigured, maskedKeyId });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   createGym,
   getMyGym,
@@ -316,5 +380,7 @@ module.exports = {
   updateGymImages,
   updateTimings,
   toggleGymStatus,
-  deleteGym
+  deleteGym,
+  saveRazorpayCredentials,
+  getRazorpayStatus,
 };
