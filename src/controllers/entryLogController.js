@@ -4,6 +4,7 @@ const Member = require("../models/Members");
 const Gym = require("../models/Gym");
 const { recordActivity } = require("../services/streakService");
 const notificationService = require("../services/notificationService");
+const pushService = require("../services/pushService");
 const { NOTIFICATION_TYPES } = require("../constants/notificationTypes");
 const { isWithinRadius, distanceBetween } = require("../utils/geoUtils");
 
@@ -170,10 +171,13 @@ const checkIn = async (req, res) => {
         console.error("[Streak] Error recording activity:", err.message)
       );
 
-    // Check-in notification 
     notificationService
-      .send(userId, NOTIFICATION_TYPES.CHECKIN_CONFIRMED, "Checked In ", "Welcome to the gym! Have a great workout.")
+      .send(userId, NOTIFICATION_TYPES.CHECKIN_CONFIRMED, "Checked In 💪", "Welcome to the gym! Have a great workout.")
       .catch((err) => console.error("[Notification] checkin error:", err.message));
+
+    pushService
+      .sendPush(userId, "Checked In 💪", "Welcome to the gym! Have a great workout.")
+      .catch((err) => console.error("[Push] checkin error:", err.message));
 
     res.status(201).json({
       message: "Checked in successfully",
@@ -213,9 +217,9 @@ const checkOut = async (req, res) => {
       { new: true }
     );
 
-    Gym.findByIdAndUpdate(member.gymId, {
-      $inc: { currentMembers: -1 },
-    }).catch((err) =>
+    Gym.findByIdAndUpdate(member.gymId, [
+      { $set: { currentMembers: { $max: [0, { $subtract: ["$currentMembers", 1] }] } } },
+    ]).catch((err) =>
       console.error("[Occupancy] decrement error:", err.message)
     );
 
@@ -227,6 +231,10 @@ const checkOut = async (req, res) => {
         `Session complete — ${durationMinutes} minutes. Great job!`
       )
       .catch((err) => console.error("[Notification] checkout error:", err.message));
+
+    pushService
+      .sendPush(userId, "Checked Out 👋", `Session complete — ${durationMinutes} minutes. Great job!`)
+      .catch((err) => console.error("[Push] checkout error:", err.message));
 
     res.status(200).json({
       message: "Checked out successfully",
@@ -263,23 +271,32 @@ const getMyStatus = async (req, res) => {
 const getMyLogs = async (req, res) => {
   try {
     const userId = req.user;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
 
     const member = await getActiveMember(userId);
     if (!member) {
       return res.status(404).json({ message: "No active membership found." });
     }
 
-    const sessions = await GymSession.find({ userId, gymId: member.gymId })
-      .sort({ checkInTime: -1 });
+    const filter = { userId, gymId: member.gymId };
 
-    const completedSessions = sessions.filter((s) => s.checkOutTime !== null);
-    const openSession = sessions.find((s) => s.checkOutTime === null) || null;
+    const [total, sessions, openSession] = await Promise.all([
+      GymSession.countDocuments(filter),
+      GymSession.find(filter).sort({ checkInTime: -1 }).skip(skip).limit(limit),
+      GymSession.findOne({ ...filter, checkOutTime: null }),
+    ]);
+
+    const totalVisits = await GymSession.countDocuments({ ...filter, checkOutTime: { $ne: null } });
+    const totalPages = Math.ceil(total / limit);
 
     res.status(200).json({
-      totalVisits: completedSessions.length,
+      totalVisits,
       isInsideGym: !!openSession,
       currentSession: openSession,
       sessions,
+      pagination: { page, limit, total, totalPages, hasNextPage: page < totalPages },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
