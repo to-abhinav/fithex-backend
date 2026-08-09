@@ -2,10 +2,9 @@ const Announcement = require("../models/Announcement");
 const Gym = require("../models/Gym");
 const Member = require("../models/Members");
 const notificationService = require("../services/notificationService");
+const pushService = require("../services/pushService");
 const { NOTIFICATION_TYPES } = require("../constants/notificationTypes");
 
-// POST /announcements
-// Owner create announcement
 const createAnnouncement = async (req, res) => {
   try {
     const gym = await Gym.findOne({ ownerId: req.user });
@@ -42,6 +41,11 @@ const createAnnouncement = async (req, res) => {
               console.error("[Notification] announcement error:", err.message)
             );
         });
+
+        const memberUserIds = members.map((m) => m.userId);
+        pushService
+          .sendPushBulk(memberUserIds, title, message, { screen: "Notifications" })
+          .catch((err) => console.error("[Push] announcement error:", err.message));
       })
       .catch((err) =>
         console.error("[Announcement] fan-out error:", err.message)
@@ -53,7 +57,6 @@ const createAnnouncement = async (req, res) => {
   }
 };
 
-// GET /announcements
 const getMyAnnouncements = async (req, res) => {
   try {
     const gym = await Gym.findOne({ ownerId: req.user });
