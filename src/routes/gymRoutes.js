@@ -7,8 +7,10 @@ const {
   createGym, getMyGym, getGymById,
   getNearbyGyms, searchGyms, updateGym,
   updateGymImages, updateTimings,
-  toggleGymStatus, deleteGym
+  toggleGymStatus, deleteGym,
+  saveRazorpayCredentials, getRazorpayStatus,
 } = require("../controllers/gymController");
+const { createLinkedAccount, createStakeholder, requestProductConfig, updateProductConfig } = require("../controllers/routeController");
 const {
   validateCreateGym,
   validateUpdateGym,
@@ -16,6 +18,7 @@ const {
   validateNearbyGyms,
   validateSearchGyms,
   validateGymId,
+  validateRazorpayCredentials,
 } = require("../validators/gymValidator");
 
 router.get("/nearby",      validateNearbyGyms, getNearbyGyms);
@@ -30,5 +33,17 @@ router.put("/:id/timings",             authMiddleware, isOwner, validateUpdateTi
 router.put("/:id/toggle-status",       authMiddleware, isOwner, validateGymId,           toggleGymStatus);
 router.delete("/:id",                  authMiddleware, isOwner, validateGymId,           deleteGym);
 
+router.post("/:id/razorpay",           authMiddleware, isOwner, validateRazorpayCredentials, saveRazorpayCredentials);
+router.get("/:id/razorpay-status",     authMiddleware, isOwner,                              getRazorpayStatus);
+
+router.post("/create-linked-account",   authMiddleware, isOwner, createLinkedAccount);
+
+router.post("/create-stakeholder",      authMiddleware, isOwner, createStakeholder);
+
+router.post("/request-product-config",  authMiddleware, isOwner, requestProductConfig);
+
+router.patch("/update-product-config",  authMiddleware, isOwner, updateProductConfig);
+
 module.exports = router;
+
 
